@@ -13,10 +13,12 @@ from app.main import app
 from app.services import find_default_model, load_model_from_disk
 
 ROOT = Path(__file__).resolve().parent.parent
-SAMPLE_JSON = ROOT / "sample_single_client.json"
-CSV_WITH_TARGET = ROOT / "test_with_target.csv"
-CSV_WITHOUT_TARGET = ROOT / "test_without_target.csv"
-MODEL_PATH = ROOT / "mortgage_pipeline.pkl"
+DATA_DIR = ROOT / "data"
+MODELS_DIR = ROOT / "models"
+SAMPLE_JSON = DATA_DIR / "sample_single_client.json"
+CSV_WITH_TARGET = DATA_DIR / "test_with_target.csv"
+CSV_WITHOUT_TARGET = DATA_DIR / "test_without_target.csv"
+MODEL_PATH = MODELS_DIR / "mortgage_pipeline.pkl"
 
 
 @pytest.fixture()

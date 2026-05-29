@@ -9,25 +9,29 @@ Backend на **FastAPI**, фронтенд — статическая HTML-ст�
 
 ```
 .
-├── app/
-│   ├── main.py          # FastAPI: /upload-model, /predict, /predict-from-csv, /health
-│   ├── schemas.py       # Pydantic-схемы запроса/ответа
-│   └── services.py      # Загрузка .pkl, предсказания, расчёт ROC-AUC
-├── models/              # сюда сохраняются загруженные .pkl
+├── app/                          # FastAPI backend
+│   ├── main.py                   # endpoints: /upload-model, /predict, /predict-from-csv, /health
+│   ├── schemas.py                # Pydantic-схемы запроса/ответа
+│   └── services.py               # загрузка .pkl, предсказания, расчёт ROC-AUC
+├── ml/
+│   └── train.py                  # обучение sklearn-пайплайна
+├── notebooks/
+│   └── research.ipynb            # EDA / эксперименты
+├── data/                         # датасет и тестовые артефакты
+│   ├── loan_data.csv             # исходный датасет
+│   ├── sample_single_client.json # пример тела для /predict
+│   ├── test_with_target.csv      # CSV с loan_status (для проверки ROC-AUC)
+│   └── test_without_target.csv   # CSV без таргета
+├── models/                       # сюда сохраняются .pkl (gitignored)
 ├── static/
-│   └── index.html       # минималистичный UI
+│   └── index.html                # минималистичный UI
 ├── tests/
-│   └── test_api.py      # тесты на fastapi.testclient
+│   └── test_api.py               # тесты на fastapi.testclient
 ├── .sourcecraft/
-│   └── ci.yaml          # CI: ruff + pytest
-├── train.py             # обучение sklearn-пайплайна (ML-часть)
-├── research.ipynb       # EDA / эксперименты
-├── loan_data.csv        # исходный датасет
-├── mortgage_pipeline.pkl # уже обученная модель (RandomForest)
-├── sample_single_client.json  # пример запроса для /predict
-├── test_with_target.csv       # CSV с колонкой loan_status (для ROC-AUC)
-├── test_without_target.csv    # CSV без таргета
-└── pyproject.toml
+│   └── ci.yaml                   # CI: ruff + pytest
+├── pyproject.toml
+├── README.md
+└── TASK.md
 ```
 
 ---
@@ -40,19 +44,20 @@ Backend на **FastAPI**, фронтенд — статическая HTML-ст�
 # 1. установить зависимости
 uv sync --all-groups
 
-# 2. (опционально) положить обученную модель в models/, чтобы она подхватилась на старте
-cp mortgage_pipeline.pkl models/
+# 2. обучить модель (положит mortgage_pipeline.pkl в models/ и обновит data/*.csv|json)
+uv run python -m ml.train
 
 # 3. поднять сервер
 uv run uvicorn app.main:app --reload
 ```
 
+На старте сервис ищет любой `.pkl` в `models/`. Если предобученной модели нет — её можно загрузить через `POST /upload-model` или прямо из UI.
+
 - UI: <http://127.0.0.1:8000/>
 - Swagger: <http://127.0.0.1:8000/docs>
 - Healthcheck: <http://127.0.0.1:8000/health>
 
-На старте сервис ищет любой `.pkl` в `models/` и автоматически подгружает его.
-Если модели нет — `/predict` и `/predict-from-csv` вернут `400 "Model is not loaded"`. Загрузить модель можно через `POST /upload-model` или прямо из UI.
+Если модели нет — `/predict` и `/predict-from-csv` вернут `400 "Model is not loaded"`.
 
 ### Тесты и линт
 
@@ -73,17 +78,17 @@ uv run pytest
 | `POST` | `/predict`          | JSON `{ "objects": [ { ...признаки... } ] }` → массив `{features, loan_status}` |
 | `POST` | `/predict-from-csv` | `multipart/form-data` с CSV. Если есть `loan_status` — считает ROC-AUC. Возвращает JSON со строками + `predicted_loan_status` |
 
-Пример тела для `/predict` — см. `sample_single_client.json`.
+Пример тела для `/predict` — см. `data/sample_single_client.json`.
 
 ---
 
 ## Что сделано
 
 **ML (готово, отдельный коммит `ML part completed`)**
-- EDA в `research.ipynb`, очистка датасета от выбросов.
-- `train.py`: `ColumnTransformer` (`StandardScaler` + `OneHotEncoder`) → `RandomForestClassifier` в едином `Pipeline`.
-- Сериализация в `mortgage_pipeline.pkl` через `joblib`.
-- Сгенерированы артефакты для проверки API: `sample_single_client.json`, `test_with_target.csv`, `test_without_target.csv`.
+- EDA в `notebooks/research.ipynb`, очистка датасета от выбросов.
+- `ml/train.py`: `ColumnTransformer` (`StandardScaler` + `OneHotEncoder`) → `RandomForestClassifier` в едином `Pipeline`.
+- Сериализация в `models/mortgage_pipeline.pkl` через `joblib`.
+- Сгенерированы артефакты для проверки API в `data/`: `sample_single_client.json`, `test_with_target.csv`, `test_without_target.csv`.
 
 **Backend / API**
 - FastAPI-приложение с lifespan-инициализацией модели из `models/`.
@@ -104,10 +109,9 @@ uv run pytest
 
 ## Что осталось / возможные улучшения
 
-- **Сравнение моделей по ТЗ.** Сейчас в `train.py` обучается только `RandomForestClassifier`. По заданию нужно сравнить ≥ 2 алгоритмов (LogReg / RF / GBM) и выбрать лучший по ROC-AUC.
+- **Сравнение моделей по ТЗ.** Сейчас в `ml/train.py` обучается только `RandomForestClassifier`. По заданию нужно сравнить ≥ 2 алгоритмов (LogReg / RF / GBM) и выбрать лучший по ROC-AUC.
 - **Feature selection.** В пайплайне используются все признаки, явного отбора нет.
 - **Документация ML-части** в README (метрики, какие модели сравнили, итоговый ROC-AUC на тесте).
-- **Чистка корня репозитория.** Заглушка `main.py` (`print("Hello from pylab10-ml!")`) больше не нужна. Дубликат `mortgage_pipeline.pkl` в корне можно удалить, оставив только копию в `models/`.
 - **Опциональные пункты ТЗ:** Docker-контейнеризация, расширенное логирование, визуализация метрик (ROC-кривая) на фронте.
 - **Линтинг фронтенда в CI** (по ТЗ требуется). Сейчас CI линтит только Python. Можно добавить `prettier --check static/` или `eslint`.
 - **CORS / hosting.** Если фронт будет деплоиться отдельно от API — нужен `CORSMiddleware`.

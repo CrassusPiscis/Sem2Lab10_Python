@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mortgage Approval Service</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+    <header class="flex items-center justify-between">
+      <h1 class="text-3xl font-bold">Mortgage Approval Service</h1>
+      <span id="modelStatus" class="px-3 py-1 rounded-full bg-slate-300 text-sm">Статус модели: ...</span>
+    </header>
+
+    <section class="bg-white shadow rounded-2xl p-6">
+      <h2 class="text-xl font-semibold mb-4">1. Загрузка модели (.pkl)</h2>
+      <form id="modelForm" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <input type="file" name="file" accept=".pkl" required class="flex-1 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white" />
+        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Загрузить модель</button>
+      </form>
+      <pre id="modelOut" class="mt-3 text-sm whitespace-pre-wrap"></pre>
+    </section>
+
+    <section class="bg-white shadow rounded-2xl p-6">
+      <h2 class="text-xl font-semibold mb-4">2. Предсказание по клиенту</h2>
+      <form id="predictForm" class="grid grid-cols-1 md:grid-cols-3 gap-3"></form>
+      <button id="predictBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg">Получить предсказание</button>
+      <pre id="predictOut" class="mt-3 text-sm whitespace-pre-wrap"></pre>
+    </section>
+
+    <section class="bg-white shadow rounded-2xl p-6">
+      <h2 class="text-xl font-semibold mb-4">3. Предсказание из CSV</h2>
+      <form id="csvForm" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <input type="file" name="file" accept=".csv" required class="flex-1 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-700 file:text-white" />
+        <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg">Отправить CSV</button>
+      </form>
+      <div id="csvSummary" class="mt-3 text-sm"></div>
+      <div id="csvTableWrap" class="mt-3 overflow-auto max-h-96 border rounded-lg hidden">
+        <table id="csvTable" class="min-w-full text-xs"></table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const fields = [
+      ["person_age", "number", 28],
+      ["person_gender", "text", "male"],
+      ["person_education", "text", "Bachelor"],
+      ["person_income", "number", 87306],
+      ["person_emp_exp", "number", 3],
+      ["person_home_ownership", "text", "RENT"],
+      ["loan_amnt", "number", 8000],
+      ["loan_intent", "text", "DEBTCONSOLIDATION"],
+      ["loan_int_rate", "number", 13.06],
+      ["loan_percent_income", "number", 0.09],
+      ["cb_person_cred_hist_length", "number", 8.0],
+      ["credit_score", "number", 685],
+      ["previous_loan_defaults_on_file", "text", "No"],
+    ];
+
+    const form = document.getElementById("predictForm");
+    for (const [name, type, def] of fields) {
+      const wrap = document.createElement("label");
+      wrap.className = "flex flex-col text-sm";
+      wrap.innerHTML = `<span class="mb-1 text-slate-600">${name}</span>
+        <input name="${name}" type="${type}" ${type === "number" ? 'step="any"' : ""} value="${def}" class="border rounded-lg px-3 py-2" />`;
+      form.appendChild(wrap);
+    }
+
+    async function refreshStatus() {
+      const el = document.getElementById("modelStatus");
+      try {
+        const r = await fetch("/health");
+        const j = await r.json();
+        el.textContent = j.model_loaded ? "Модель загружена" : "Модель НЕ загружена";
+        el.className = "px-3 py-1 rounded-full text-sm " + (j.model_loaded ? "bg-emerald-200 text-emerald-900" : "bg-rose-200 text-rose-900");
+      } catch {
+        el.textContent = "Сервер недоступен";
+      }
+    }
+    refreshStatus();
+
+    document.getElementById("modelForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const out = document.getElementById("modelOut");
+      out.textContent = "Загрузка...";
+      const r = await fetch("/upload-model", { method: "POST", body: fd });
+      out.textContent = JSON.stringify(await r.json(), null, 2);
+      refreshStatus();
+    });
+
+    document.getElementById("predictBtn").addEventListener("click", async () => {
+      const data = {};
+      for (const [name, type] of fields) {
+        const v = form.elements[name].value;
+        data[name] = type === "number" ? Number(v) : v;
+      }
+      const out = document.getElementById("predictOut");
+      out.textContent = "Запрос...";
+      const r = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objects: [data] }),
+      });
+      out.textContent = JSON.stringify(await r.json(), null, 2);
+    });
+
+    document.getElementById("csvForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const summary = document.getElementById("csvSummary");
+      const wrap = document.getElementById("csvTableWrap");
+      const table = document.getElementById("csvTable");
+      summary.textContent = "Обработка...";
+      wrap.classList.add("hidden");
+      const r = await fetch("/predict-from-csv", { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok) {
+        summary.textContent = j.detail || "Ошибка";
+        return;
+      }
+      summary.textContent = `Строк: ${j.rows}. ROC-AUC: ${j.roc_auc ?? "—"}`;
+      const rows = j.data.slice(0, 50);
+      if (rows.length) {
+        const cols = Object.keys(rows[0]);
+        table.innerHTML = "<thead><tr>" + cols.map(c => `<th class='px-2 py-1 bg-slate-200 text-left'>${c}</th>`).join("") + "</tr></thead>" +
+          "<tbody>" + rows.map(r => "<tr>" + cols.map(c => `<td class='px-2 py-1 border-t'>${r[c]}</td>`).join("") + "</tr>").join("") + "</tbody>";
+        wrap.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

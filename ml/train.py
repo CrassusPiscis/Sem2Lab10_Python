@@ -1,16 +1,22 @@
 import json
 import logging
+from pathlib import Path
+
+import joblib
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
-import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT / "data"
+MODELS_DIR = ROOT / "models"
 
 
 def load_and_clean_data(filepath: str) -> pd.DataFrame:
@@ -56,7 +62,8 @@ def main():
     ]
 
     # подготовка данных
-    df = load_and_clean_data("loan_data.csv")
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    df = load_and_clean_data(str(DATA_DIR / "loan_data.csv"))
     X = df.drop(columns=[target])
     y = df[target]
 
@@ -75,19 +82,20 @@ def main():
     logging.info(f"Тестовый ROC-AUC: {roc_auc:.4f}")
 
     # сохранение артефактов
-    joblib.dump(pipeline, 'mortgage_pipeline.pkl')
-    logging.info("пайплайн Random Forest сохранен в 'mortgage_pipeline.pkl'")
+    model_path = MODELS_DIR / "mortgage_pipeline.pkl"
+    joblib.dump(pipeline, model_path)
+    logging.info("пайплайн Random Forest сохранен в '%s'", model_path)
 
     # генерация тестового json-файла
     sample_client = X_test.iloc[0].to_dict()
-    with open('sample_single_client.json', 'w', encoding='utf-8') as f:
+    with open(DATA_DIR / 'sample_single_client.json', 'w', encoding='utf-8') as f:
         json.dump(sample_client, f, ensure_ascii=False, indent=4)
 
     # генерация тестовых csv файлов для валидации API методов
     test_with_target = X_test.copy()
     test_with_target[target] = y_test
-    test_with_target.head(20).to_csv('test_with_target.csv', index=False)
-    X_test.head(20).to_csv('test_without_target.csv', index=False)
+    test_with_target.head(20).to_csv(DATA_DIR / 'test_with_target.csv', index=False)
+    X_test.head(20).to_csv(DATA_DIR / 'test_without_target.csv', index=False)
     logging.info("Тестовые артефакты для API успешно обновлены.")
 
 

@@ -16,3 +16,11 @@ ENV/
 
 # IDE settings (PyCharm)
 .idea/
+
+# Pytest / coverage
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Uploaded models (artefacts)
+models/*.pkl

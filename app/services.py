@@ -46,12 +46,16 @@ def records_to_dataframe(records: list[dict[str, Any]]) -> pd.DataFrame:
 
 
 def predict_records(model: Any, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Возвращает список словарей с признаками и предсказанным loan_status."""
+    """Возвращает список словарей с признаками, предсказанным loan_status и вероятностью одобрения."""
     df = records_to_dataframe(records)
-    preds = model.predict(df)
+    probas = model.predict_proba(df)[:, 1]
     out: list[dict[str, Any]] = []
-    for record, pred in zip(records, preds):
-        out.append({"features": record, "loan_status": int(pred)})
+    for record, proba in zip(records, probas):
+        out.append({
+            "features": record,
+            "loan_status": int(proba >= 0.5),
+            "loan_probability": round(float(proba), 4),
+        })
     return out
 
 

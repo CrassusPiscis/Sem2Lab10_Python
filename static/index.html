@@ -1,135 +1,907 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mortgage Approval Service</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      --bg-color: #f4f7f9;
+      --text-main: #1e293b; /* slate-800 */
+      --text-muted: #64748b; /* slate-500 */
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0; /* slate-200 */
+      --primary: #2563eb; /* blue-600 */
+      --primary-hover: #1d4ed8; /* blue-700 */
+      --success: #16a34a; /* green-600 */
+      --success-bg: #dcfce7; /* green-100 */
+      --danger: #dc2626; /* red-600 */
+      --danger-bg: #fee2e2; /* red-100 */
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1; /* slate-300 */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Navbar / Header */
+    .navbar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--card-border);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-badge {
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f1f5f9;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+
+    .status-badge.loaded {
+      color: #047857;
+      background: #d1fae5;
+      border-color: #a7f3d0;
+    }
+
+    .status-badge.error {
+      color: #be123c;
+      background: #ffe4e6;
+      border-color: #fecdd3;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.75rem 0;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn:hover {
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text-main);
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    /* Form Layout */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .client-layout {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        gap: 2rem;
+        align-items: start;
+      }
+    }
+
+    /* Inputs */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .form-control {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text-main);
+      padding: 0.6rem 1rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .btn.full-width {
+      width: 100%;
+    }
+
+    /* File Input Styling */
+    .file-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .file-input-wrapper {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .file-input {
+      position: relative;
+      background: #f8fafc;
+      border: 1px dashed var(--input-border);
+      border-radius: 0.375rem;
+      padding: 0.5rem;
+      flex: 1;
+      transition: all 0.2s;
+    }
+    
+    .file-input:hover {
+      border-color: var(--primary);
+    }
+
+    .file-input input[type="file"] {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    .file-input input[type="file"]::file-selector-button {
+      background: #fff;
+      border: 1px solid var(--input-border);
+      color: var(--text-main);
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.25rem;
+      margin-right: 1rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .file-input input[type="file"]::file-selector-button:hover {
+      background: #f1f5f9;
+    }
+
+    /* Prediction Result Card */
+    .result-card {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      padding: 2rem 1.5rem;
+      margin-top: 1.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      animation: slideUp 0.4s ease-out;
+    }
+
+    @media (min-width: 768px) {
+      .result-card {
+        margin-top: 0;
+        position: sticky;
+        top: 2rem;
+      }
+    }
+
+    .result-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .result-badge {
+      padding: 0.5rem 1.5rem;
+      border-radius: 9999px;
+      font-size: 1rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-badge.approved {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .result-badge.rejected {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .result-pct {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 1rem;
+      background: #f1f5f9;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+      box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .progress-bar.approved {
+      background: var(--success);
+    }
+
+    .progress-bar.rejected {
+      background: var(--danger);
+    }
+
+    .result-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* CSV Table */
+    .table-container {
+      margin-top: 1.5rem;
+      overflow-x: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 0.5rem;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 0.875rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    
+    .csv-summary {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: #f8fafc;
+      border: 1px solid var(--card-border);
+      border-radius: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .summary-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    
+    .summary-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      animation: fadeIn 0.3s;
+    }
+    
+    .alert.success {
+      background: var(--success-bg);
+      color: var(--success);
+      border-color: rgba(22, 163, 74, 0.2);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Loader */
+    .loader {
+      display: inline-block;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .fade-enter-active, .fade-leave-active {
+      transition: opacity 0.2s ease;
+    }
+    .fade-enter-from, .fade-leave-to {
+      opacity: 0;
+    }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800">
-  <div class="max-w-5xl mx-auto p-6 space-y-6">
-    <header class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold">Mortgage Approval Service</h1>
-      <span id="modelStatus" class="px-3 py-1 rounded-full bg-slate-300 text-sm">Статус модели: ...</span>
-    </header>
-
-    <section class="bg-white shadow rounded-2xl p-6">
-      <h2 class="text-xl font-semibold mb-4">1. Загрузка модели (.pkl)</h2>
-      <form id="modelForm" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <input type="file" name="file" accept=".pkl" required class="flex-1 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white" />
-        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Загрузить модель</button>
-      </form>
-      <pre id="modelOut" class="mt-3 text-sm whitespace-pre-wrap"></pre>
-    </section>
-
-    <section class="bg-white shadow rounded-2xl p-6">
-      <h2 class="text-xl font-semibold mb-4">2. Предсказание по клиенту</h2>
-      <form id="predictForm" class="grid grid-cols-1 md:grid-cols-3 gap-3"></form>
-      <button id="predictBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg">Получить предсказание</button>
-      <pre id="predictOut" class="mt-3 text-sm whitespace-pre-wrap"></pre>
-    </section>
-
-    <section class="bg-white shadow rounded-2xl p-6">
-      <h2 class="text-xl font-semibold mb-4">3. Предсказание из CSV</h2>
-      <form id="csvForm" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <input type="file" name="file" accept=".csv" required class="flex-1 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-700 file:text-white" />
-        <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg">Отправить CSV</button>
-      </form>
-      <div id="csvSummary" class="mt-3 text-sm"></div>
-      <div id="csvTableWrap" class="mt-3 overflow-auto max-h-96 border rounded-lg hidden">
-        <table id="csvTable" class="min-w-full text-xs"></table>
+<body>
+  <div id="app">
+    <nav class="navbar">
+      <div class="container header-content">
+        <h1>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Mortgage Pro
+        </h1>
+        <div class="status-badge" :class="modelStatus.isLoaded ? 'loaded' : 'error'">
+          <span class="status-dot"></span>
+          {{ modelStatus.text }}
+        </div>
       </div>
-    </section>
+    </nav>
+
+    <div class="container">
+      <div class="tabs">
+        <button 
+          class="tab-btn" 
+          :class="{ active: activeTab === 'client' }" 
+          @click="activeTab = 'client'">
+          Анализ Заявки
+        </button>
+        <button 
+          class="tab-btn" 
+          :class="{ active: activeTab === 'csv' }" 
+          @click="activeTab = 'csv'">
+          Пакетная Обработка (CSV)
+        </button>
+        <button 
+          class="tab-btn" 
+          :class="{ active: activeTab === 'model' }" 
+          @click="activeTab = 'model'">
+          Настройки Модели
+        </button>
+      </div>
+
+      <!-- TAB 1: CLIENT -->
+      <transition name="fade" mode="out-in">
+        <div v-if="activeTab === 'client'" class="client-layout">
+          <!-- Form -->
+          <div class="card">
+            <h2 class="card-title">Данные Заявителя</h2>
+            <form @submit.prevent="submitPredict" class="form-grid">
+              <div class="form-group" v-for="field in fieldsConfig" :key="field.name">
+                <label :for="field.name">{{ field.label || field.name }}</label>
+                
+                <select 
+                  v-if="field.options" 
+                  :id="field.name" 
+                  v-model="clientData[field.name]" 
+                  class="form-control"
+                  required>
+                  <option v-for="opt in field.options" :value="opt" :key="opt">{{ opt }}</option>
+                </select>
+                
+                <input 
+                  v-else
+                  :id="field.name" 
+                  :type="field.type" 
+                  :step="field.type === 'number' ? 'any' : null"
+                  v-model="clientData[field.name]" 
+                  class="form-control"
+                  required />
+              </div>
+              
+              <div style="grid-column: 1 / -1; margin-top: 1rem;">
+                <button type="submit" class="btn full-width" :disabled="predictLoading || !modelStatus.isLoaded">
+                  <span v-if="predictLoading" class="loader"></span>
+                  <span v-else>Рассчитать Вероятность</span>
+                </button>
+              </div>
+            </form>
+            <div v-if="predictError" class="alert">{{ predictError }}</div>
+          </div>
+
+          <!-- Result -->
+          <div>
+            <div v-if="predictionResult" class="result-card">
+              <h3 style="color: var(--text-main); font-size: 1.1rem; font-weight: 600; margin-bottom: 2rem; text-align: center;">Статус Заявки</h3>
+              
+              <div class="result-header">
+                <div class="result-badge" :class="predictionResult.approved ? 'approved' : 'rejected'">
+                  <span v-if="predictionResult.approved">✓ Предварительно Одобрено</span>
+                  <span v-else>✗ Отказ</span>
+                </div>
+                <div class="result-pct">{{ predictionResult.pct }}%</div>
+                <div class="result-desc">Скоринг Вероятности Одобрения</div>
+              </div>
+              
+              <div class="progress-track">
+                <div class="progress-bar" 
+                     :class="predictionResult.approved ? 'approved' : 'rejected'"
+                     :style="{ width: predictionResult.pct + '%' }"></div>
+              </div>
+              
+              <div style="margin-top: 2.5rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 1rem;">Сводка данных</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem;">
+                  <div v-for="(val, key) in predictionResult.features" :key="key" style="display: flex; flex-direction: column; background: #f8fafc; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid var(--card-border);">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.25rem;">{{ key }}</span>
+                    <span style="color: var(--text-main); font-weight: 600;">{{ val }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-else-if="!modelStatus.isLoaded" class="result-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 300px; background: #f8fafc; box-shadow: none;">
+              <div style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-muted);">⚙️</div>
+              <h3 style="color: var(--text-main); margin-bottom: 0.5rem; font-weight: 600;">Модель не загружена</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem;">Перейдите на вкладку «Настройки Модели» и загрузите .pkl файл.</p>
+            </div>
+            
+            <div v-else class="result-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 300px; background: #f8fafc; box-shadow: none;">
+              <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #cbd5e1;">📊</div>
+              <p style="color: var(--text-muted); font-size: 0.95rem;">Заполните форму слева и нажмите «Рассчитать Вероятность» для получения скоринга.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: CSV -->
+        <div v-else-if="activeTab === 'csv'" class="card">
+          <h2 class="card-title">Пакетная Обработка Данных</h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+            Загрузите CSV-файл со списком клиентов для массового скоринга. При наличии колонки <code>loan_status</code> будет автоматически рассчитана метрика ROC-AUC.
+          </p>
+          
+          <form @submit.prevent="submitCsv">
+            <div class="file-input-wrapper">
+              <div class="file-input">
+                <input type="file" ref="csvFileInput" accept=".csv" required />
+              </div>
+              <button type="submit" class="btn" :disabled="csvLoading || !modelStatus.isLoaded">
+                <span v-if="csvLoading" class="loader"></span>
+                <span v-else>Анализировать CSV</span>
+              </button>
+            </div>
+          </form>
+          
+          <div v-if="csvError" class="alert">{{ csvError }}</div>
+          
+          <div v-if="csvResult" class="csv-summary">
+            <div class="summary-item">
+              <span class="summary-label">Всего записей</span>
+              <span class="summary-val">{{ csvResult.rows }}</span>
+            </div>
+            <div class="summary-item" v-if="csvResult.roc_auc !== null">
+              <span class="summary-label">Модельный ROC-AUC</span>
+              <span class="summary-val" style="color: var(--primary);">{{ csvResult.roc_auc.toFixed(4) }}</span>
+            </div>
+          </div>
+          
+          <div v-if="csvResult && csvResult.data.length" class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th v-for="col in Object.keys(csvResult.data[0])" :key="col">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, idx) in csvResult.data.slice(0, 100)" :key="idx">
+                  <td v-for="col in Object.keys(row)" :key="col">
+                    <span v-if="col === 'predicted_loan_status'" 
+                          style="display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;"
+                          :style="{ background: row[col] === 1 ? 'var(--success-bg)' : 'var(--danger-bg)', color: row[col] === 1 ? 'var(--success)' : 'var(--danger)' }">
+                      {{ row[col] === 1 ? 'Одобрено' : 'Отказ' }}
+                    </span>
+                    <span v-else>{{ row[col] }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="csvResult.data.length > 100" style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--card-border);">
+              Отображаются первые 100 записей.
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: MODEL -->
+        <div v-else-if="activeTab === 'model'" class="card" style="max-width: 600px; margin: 0 auto;">
+          <h2 class="card-title">Настройки ML Модели</h2>
+          
+          <div style="background: #f8fafc; border: 1px solid var(--card-border); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.75rem;">Текущее состояние ядра</p>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <div class="status-badge" :class="modelStatus.isLoaded ? 'loaded' : 'error'" style="display: inline-flex;">
+                <span class="status-dot"></span>
+                {{ modelStatus.text }}
+              </div>
+              <div v-if="modelStatus.path" style="font-family: monospace; font-size: 0.85rem; color: var(--text-main); background: #e2e8f0; padding: 0.3rem 0.6rem; border-radius: 0.25rem;">
+                {{ modelStatus.path.split('/').pop() || modelStatus.path.split('\\').pop() }}
+              </div>
+            </div>
+          </div>
+          
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+            Загрузите сериализованный sklearn-пайплайн в формате <code>.pkl</code>. Ожидаются стандартизированные признаки, соответствующие спецификации API.
+          </p>
+          
+          <form @submit.prevent="submitModel">
+            <div class="file-input-wrapper">
+              <div class="file-input">
+                <input type="file" ref="modelFileInput" accept=".pkl" required />
+              </div>
+              <button type="submit" class="btn" :disabled="modelLoading">
+                <span v-if="modelLoading" class="loader"></span>
+                <span v-else>Загрузить .pkl</span>
+              </button>
+            </div>
+          </form>
+          
+          <div v-if="modelMessage" class="alert success" style="margin-top: 1.5rem;">
+            {{ modelMessage }}
+          </div>
+          <div v-if="modelError" class="alert" style="margin-top: 1.5rem;">
+            {{ modelError }}
+          </div>
+        </div>
+      </transition>
+    </div>
   </div>
 
   <script>
-    const fields = [
-      ["person_age", "number", 28],
-      ["person_gender", "text", "male"],
-      ["person_education", "text", "Bachelor"],
-      ["person_income", "number", 87306],
-      ["person_emp_exp", "number", 3],
-      ["person_home_ownership", "text", "RENT"],
-      ["loan_amnt", "number", 8000],
-      ["loan_intent", "text", "DEBTCONSOLIDATION"],
-      ["loan_int_rate", "number", 13.06],
-      ["loan_percent_income", "number", 0.09],
-      ["cb_person_cred_hist_length", "number", 8.0],
-      ["credit_score", "number", 685],
-      ["previous_loan_defaults_on_file", "text", "No"],
-    ];
+    const { createApp, ref, reactive, onMounted } = Vue;
 
-    const form = document.getElementById("predictForm");
-    for (const [name, type, def] of fields) {
-      const wrap = document.createElement("label");
-      wrap.className = "flex flex-col text-sm";
-      wrap.innerHTML = `<span class="mb-1 text-slate-600">${name}</span>
-        <input name="${name}" type="${type}" ${type === "number" ? 'step="any"' : ""} value="${def}" class="border rounded-lg px-3 py-2" />`;
-      form.appendChild(wrap);
-    }
+    const App = {
+      setup() {
+        // State
+        const activeTab = ref('client');
+        const modelStatus = reactive({ isLoaded: false, text: 'Проверка статуса...', path: null });
+        
+        // Client Tab State
+        const fieldsConfig = [
+          { name: "person_age", label: "Возраст Заявителя", type: "number", default: 28 },
+          { name: "person_gender", label: "Пол", type: "text", default: "male", options: ["male", "female"] },
+          { name: "person_education", label: "Уровень Образования", type: "text", default: "Bachelor", options: ["High School", "Associate", "Bachelor", "Master", "Doctorate"] },
+          { name: "person_income", label: "Годовой Доход ($)", type: "number", default: 87306 },
+          { name: "person_emp_exp", label: "Стаж Работы (лет)", type: "number", default: 3 },
+          { name: "person_home_ownership", label: "Тип Жилья", type: "text", default: "RENT", options: ["RENT", "OWN", "MORTGAGE", "OTHER"] },
+          { name: "loan_amnt", label: "Сумма Ипотеки ($)", type: "number", default: 8000 },
+          { name: "loan_intent", label: "Цель Кредита", type: "text", default: "DEBTCONSOLIDATION", options: ["PERSONAL", "EDUCATION", "MEDICAL", "VENTURE", "HOMEIMPROVEMENT", "DEBTCONSOLIDATION"] },
+          { name: "loan_int_rate", label: "Процентная Ставка (%)", type: "number", default: 13.06 },
+          { name: "loan_percent_income", label: "Отношение Кредита к Доходу", type: "number", default: 0.09 },
+          { name: "cb_person_cred_hist_length", label: "Длина Кред. Истории (лет)", type: "number", default: 8.0 },
+          { name: "credit_score", label: "Кредитный Рейтинг (FICO)", type: "number", default: 685 },
+          { name: "previous_loan_defaults_on_file", label: "Дефолты в Прошлом", type: "text", default: "No", options: ["Yes", "No", "Y", "N"] },
+        ];
+        
+        const clientData = reactive({});
+        fieldsConfig.forEach(f => { clientData[f.name] = f.default; });
+        
+        const predictLoading = ref(false);
+        const predictError = ref("");
+        const predictionResult = ref(null);
+        
+        // CSV Tab State
+        const csvFileInput = ref(null);
+        const csvLoading = ref(false);
+        const csvError = ref("");
+        const csvResult = ref(null);
+        
+        // Model Tab State
+        const modelFileInput = ref(null);
+        const modelLoading = ref(false);
+        const modelError = ref("");
+        const modelMessage = ref("");
 
-    async function refreshStatus() {
-      const el = document.getElementById("modelStatus");
-      try {
-        const r = await fetch("/health");
-        const j = await r.json();
-        el.textContent = j.model_loaded ? "Модель загружена" : "Модель НЕ загружена";
-        el.className = "px-3 py-1 rounded-full text-sm " + (j.model_loaded ? "bg-emerald-200 text-emerald-900" : "bg-rose-200 text-rose-900");
-      } catch {
-        el.textContent = "Сервер недоступен";
+        // Methods
+        const checkHealth = async () => {
+          try {
+            const res = await fetch('/health');
+            const data = await res.json();
+            modelStatus.isLoaded = data.model_loaded;
+            modelStatus.text = data.model_loaded ? 'Система Активна' : 'Модель Не Загружена';
+            modelStatus.path = data.model_path;
+          } catch (err) {
+            modelStatus.isLoaded = false;
+            modelStatus.text = 'Сервер Недоступен';
+            modelStatus.path = null;
+          }
+        };
+
+        const submitPredict = async () => {
+          predictLoading.value = true;
+          predictError.value = "";
+          predictionResult.value = null;
+          
+          // Format numeric fields
+          const payload = {};
+          fieldsConfig.forEach(f => {
+            payload[f.name] = f.type === 'number' ? Number(clientData[f.name]) : clientData[f.name];
+          });
+          
+          try {
+            const res = await fetch('/predict', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ objects: [payload] })
+            });
+            const data = await res.json();
+            
+            if (!res.ok) throw new Error(data.detail || 'Ошибка предсказания');
+            
+            const p = data.predictions[0];
+            
+            // Animation trick: set values slightly after to trigger CSS transitions
+            predictionResult.value = {
+              approved: p.loan_status === 1,
+              pct: 0, // start at 0
+              features: p.features
+            };
+            
+            setTimeout(() => {
+              predictionResult.value.pct = Math.round(p.loan_probability * 100);
+            }, 50);
+            
+          } catch (err) {
+            predictError.value = err.message;
+          } finally {
+            predictLoading.value = false;
+          }
+        };
+
+        const submitCsv = async () => {
+          if (!csvFileInput.value?.files?.length) return;
+          
+          csvLoading.value = true;
+          csvError.value = "";
+          csvResult.value = null;
+          
+          const fd = new FormData();
+          fd.append('file', csvFileInput.value.files[0]);
+          
+          try {
+            const res = await fetch('/predict-from-csv', {
+              method: 'POST',
+              body: fd
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Ошибка обработки CSV');
+            csvResult.value = data;
+          } catch (err) {
+            csvError.value = err.message;
+          } finally {
+            csvLoading.value = false;
+          }
+        };
+
+        const submitModel = async () => {
+          if (!modelFileInput.value?.files?.length) return;
+          
+          modelLoading.value = true;
+          modelError.value = "";
+          modelMessage.value = "";
+          
+          const fd = new FormData();
+          fd.append('file', modelFileInput.value.files[0]);
+          
+          try {
+            const res = await fetch('/upload-model', {
+              method: 'POST',
+              body: fd
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Ошибка загрузки модели');
+            
+            modelMessage.value = `Модель ${data.filename} успешно загружена!`;
+            modelFileInput.value.value = ""; // clear input
+            await checkHealth();
+          } catch (err) {
+            modelError.value = err.message;
+          } finally {
+            modelLoading.value = false;
+          }
+        };
+
+        onMounted(() => {
+          checkHealth();
+        });
+
+        return {
+          activeTab,
+          modelStatus,
+          
+          fieldsConfig,
+          clientData,
+          predictLoading,
+          predictError,
+          predictionResult,
+          submitPredict,
+          
+          csvFileInput,
+          csvLoading,
+          csvError,
+          csvResult,
+          submitCsv,
+          
+          modelFileInput,
+          modelLoading,
+          modelError,
+          modelMessage,
+          submitModel
+        };
       }
-    }
-    refreshStatus();
+    };
 
-    document.getElementById("modelForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const out = document.getElementById("modelOut");
-      out.textContent = "Загрузка...";
-      const r = await fetch("/upload-model", { method: "POST", body: fd });
-      out.textContent = JSON.stringify(await r.json(), null, 2);
-      refreshStatus();
-    });
-
-    document.getElementById("predictBtn").addEventListener("click", async () => {
-      const data = {};
-      for (const [name, type] of fields) {
-        const v = form.elements[name].value;
-        data[name] = type === "number" ? Number(v) : v;
-      }
-      const out = document.getElementById("predictOut");
-      out.textContent = "Запрос...";
-      const r = await fetch("/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objects: [data] }),
-      });
-      out.textContent = JSON.stringify(await r.json(), null, 2);
-    });
-
-    document.getElementById("csvForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const summary = document.getElementById("csvSummary");
-      const wrap = document.getElementById("csvTableWrap");
-      const table = document.getElementById("csvTable");
-      summary.textContent = "Обработка...";
-      wrap.classList.add("hidden");
-      const r = await fetch("/predict-from-csv", { method: "POST", body: fd });
-      const j = await r.json();
-      if (!r.ok) {
-        summary.textContent = j.detail || "Ошибка";
-        return;
-      }
-      summary.textContent = `Строк: ${j.rows}. ROC-AUC: ${j.roc_auc ?? "—"}`;
-      const rows = j.data.slice(0, 50);
-      if (rows.length) {
-        const cols = Object.keys(rows[0]);
-        table.innerHTML = "<thead><tr>" + cols.map(c => `<th class='px-2 py-1 bg-slate-200 text-left'>${c}</th>`).join("") + "</tr></thead>" +
-          "<tbody>" + rows.map(r => "<tr>" + cols.map(c => `<td class='px-2 py-1 border-t'>${r[c]}</td>`).join("") + "</tr>").join("") + "</tbody>";
-        wrap.classList.remove("hidden");
-      }
-    });
+    createApp(App).mount('#app');
   </script>
 </body>
 </html>

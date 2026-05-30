@@ -48,6 +48,7 @@ class PredictionOutput(BaseModel):
     """схема ответа для объекта (включает признаки и предсказание)"""
     features: LoanPredictionInput
     loan_status: int = Field(..., description="Статус одобрения: 1 - одобрено, 0 - отказ")
+    loan_probability: float = Field(..., description="Вероятность одобрения от 0 до 1", ge=0, le=1)
 
 
 class PredictResponse(BaseModel):

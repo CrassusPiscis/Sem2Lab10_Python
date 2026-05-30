@@ -1,0 +1,9 @@
+services:
+  api:
+    build: 
+      context: .
+      network: host
+    network_mode: "host"
+    volumes:
+      # Mount the models directory to persist uploaded models
+      - ./models:/app/models

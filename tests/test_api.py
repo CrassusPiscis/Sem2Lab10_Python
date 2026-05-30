@@ -83,6 +83,7 @@ def test_predict_returns_predictions(client_with_model):
     body = r.json()
     assert len(body["predictions"]) == 2
     assert body["predictions"][0]["loan_status"] in (0, 1)
+    assert 0.0 <= body["predictions"][0]["loan_probability"] <= 1.0
     assert body["predictions"][0]["features"]["person_age"] == sample["person_age"]
 
 

@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+.pytest_cache
+.ruff_cache
+.sourcecraft
+__pycache__
+*.pyc
+.python-version
+notebooks/
+tests/
+README.md
+TASK.md

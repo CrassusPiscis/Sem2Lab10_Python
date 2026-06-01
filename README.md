@@ -49,6 +49,8 @@ Backend на **FastAPI**, фронтенд — статическая HTML-ст�
 │   └── test_api.py               # тесты на fastapi.testclient
 ├── .sourcecraft/
 │   └── ci.yaml                   # CI: ruff + pytest
+├── Dockerfile                    # python:3.13-slim + uv, запускает uvicorn
+├── docker-compose.yml            # сервис api с томом для models/
 ├── pyproject.toml
 ├── README.md
 └── TASK.md
@@ -85,6 +87,22 @@ uv run uvicorn app.main:app --reload
 uv run ruff check .
 uv run pytest
 ```
+
+### Docker
+
+В репозитории есть `Dockerfile` (Python 3.13-slim + `uv sync --frozen --no-dev`) и `docker-compose.yml`. Каталог `models/` монтируется томом, чтобы загруженные через `/upload-model` `.pkl` переживали пересборку контейнера.
+
+```bash
+# собрать и поднять сервис
+docker compose up --build
+
+# в фоне
+docker compose up -d --build
+```
+
+После запуска UI и API доступны по тем же адресам (`http://127.0.0.1:8000/`, `/docs`, `/health`) — compose использует `network_mode: host`.
+
+Если в `models/` нет `.pkl`, модель можно либо обучить локально (`uv run python -m ml.train`) перед сборкой, либо загрузить готовый файл через `POST /upload-model` уже на запущенном контейнере.
 
 ---
 
@@ -132,6 +150,6 @@ uv run pytest
 - **Сравнение моделей по ТЗ.** Сейчас в `ml/train.py` обучается только `RandomForestClassifier`. По заданию нужно сравнить ≥ 2 алгоритмов (LogReg / RF / GBM) и выбрать лучший по ROC-AUC.
 - **Feature selection.** В пайплайне используются все признаки, явного отбора нет.
 - **Документация ML-части** в README (метрики, какие модели сравнили, итоговый ROC-AUC на тесте).
-- **Опциональные пункты ТЗ:** Docker-контейнеризация, расширенное логирование, визуализация метрик (ROC-кривая) на фронте.
+- **Опциональные пункты ТЗ:** расширенное логирование, визуализация метрик (ROC-кривая) на фронте. Docker-контейнеризация — сделана (`Dockerfile` + `docker-compose.yml`).
 - **Линтинг фронтенда в CI** (по ТЗ требуется). Сейчас CI линтит только Python. Можно добавить `prettier --check static/` или `eslint`.
 - **CORS / hosting.** Если фронт будет деплоиться отдельно от API — нужен `CORSMiddleware`.
